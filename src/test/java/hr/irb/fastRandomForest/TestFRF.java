@@ -30,6 +30,7 @@ public class TestFRF{
   private static FastRandomForest frf(){
     FastRandomForest rf = new FastRandomForest();
     rf.setNumTrees(100);
+    rf.setComputeImportances(true);
     return rf;
   }
 
