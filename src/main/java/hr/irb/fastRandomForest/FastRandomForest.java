@@ -22,13 +22,23 @@
 
 package hr.irb.fastRandomForest;
 
-import weka.classifiers.AbstractClassifier;
-import weka.core.*;
-import weka.core.TechnicalInformation.Field;
-import weka.core.TechnicalInformation.Type;
-
 import java.util.Enumeration;
 import java.util.Vector;
+import weka.classifiers.AbstractClassifier;
+import weka.core.AdditionalMeasureProducer;
+import weka.core.Capabilities;
+import weka.core.Instance;
+import weka.core.Instances;
+import weka.core.Option;
+import weka.core.OptionHandler;
+import weka.core.Randomizable;
+import weka.core.RevisionUtils;
+import weka.core.TechnicalInformation;
+import weka.core.TechnicalInformation.Field;
+import weka.core.TechnicalInformation.Type;
+import weka.core.TechnicalInformationHandler;
+import weka.core.Utils;
+import weka.core.WeightedInstancesHandler;
 
 /**
  * Based on the "weka.classifiers.trees.RandomForest" class, revision 1.12,
@@ -560,16 +570,13 @@ public class FastRandomForest
     }
 
     setComputeImportances(Utils.getFlag("import", options));
-
     super.setOptions(options);
-
     Utils.checkForRemainingOptions(options);
   }
 
 
   /**
    * Returns default capabilities of the classifier.
-   *
    * @return the capabilities of this classifier
    */
   public Capabilities getCapabilities(){
@@ -584,9 +591,7 @@ public class FastRandomForest
 
   /**
    * Builds a classifier for a set of instances.
-   *
    * @param data the instances to train the classifier with
-   *
    * @throws Exception if something goes wrong
    */
   public void buildClassifier(Instances data) throws Exception{
@@ -633,7 +638,6 @@ public class FastRandomForest
     m_bagger.setNumIterations(m_numTrees);
     m_bagger.setCalcOutOfBag(true);
     m_bagger.setComputeImportances( this.getComputeImportances() );
-
     m_bagger.buildClassifier(data, m_NumThreads, this);
 
   }
@@ -641,19 +645,14 @@ public class FastRandomForest
 
   /**
    * Returns the class probability distribution for an instance.
-   *
    * @param instance the instance to be classified
-   *
    * @return the distribution the forest generates for the instance
-   *
    * @throws Exception if computation fails
    */
   public double[] distributionForInstance(Instance instance) throws Exception{
-
     if(m_ZeroR != null){  // default model?
       return m_ZeroR.distributionForInstance(instance);
     }
-
     return m_bagger.distributionForInstance(instance);
 
   }
@@ -691,7 +690,6 @@ public class FastRandomForest
 
   /**
    * Main method for this class.
-   *
    * @param argv the options
    */
   public static void main(String[] argv){
@@ -702,18 +700,10 @@ public class FastRandomForest
     return RevisionUtils.extract("$Revision: 0.99$");
   }
 
-  ////////////////////////////
-  // Feature importances stuff
-  ////////////////////////////
-
   /** @return the feature importances or <code>null</code> if the importances haven't been computed */
   public double[] getFeatureImportances(){
     return m_bagger.getFeatureImportances();
   }
-
-  ////////////////////////////
-  // /Feature importances stuff
-  ////////////////////////////
 
 }
 

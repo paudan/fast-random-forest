@@ -25,7 +25,6 @@ import weka.attributeSelection.AttributeEvaluator;
 import weka.classifiers.AbstractClassifier;
 import weka.core.Capabilities;
 import weka.core.Instances;
-import weka.core.RevisionUtils;
 
 /**
  * Evaluate the merit of each attribute using a random forest.
@@ -41,19 +40,21 @@ public class FRFAttributeEval extends ASEvaluation implements AttributeEvaluator
   private double[] m_Importances;
 
   /** The prototype for the rf. */
-  private FastRandomForest m_frfProto = new FastRandomForest();
+  private FastRandomForest m_frfProto;
 
   /** Constructor */
   public FRFAttributeEval() {
+      m_frfProto = new FastRandomForest();
+      m_frfProto.setComputeImportances(true);
   }
 
   /**
-   * Constructor.
-   *
+   * Constructor
    * @param frfProto the prototype for the random forest.
    */
   public FRFAttributeEval(FastRandomForest frfProto) {
     m_frfProto = frfProto;
+    m_frfProto.setComputeImportances(true);
   }
 
   /** {@inheritDoc} */
@@ -82,14 +83,4 @@ public class FRFAttributeEval extends ASEvaluation implements AttributeEvaluator
   public Capabilities getCapabilities() {
     return m_frfProto.getCapabilities();
   }
-
-  @Override
-  public String getRevision() {
-    return RevisionUtils.extract("$Id: FRFAttributeEval.java 49 2010-10-05 14:05:11Z vinaysethmohta $");
-  }
-
-  //TODO: uncomment after implementing all the optionhandler machinery
-  //  public static void main(String[] args) {
-  //    runEvaluator(new FRFAttributeEval(), args);
-  //  }
 }

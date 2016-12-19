@@ -13,15 +13,13 @@
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
+ /*
  *    SplitCriteria.java
  *    Copyright (C) 1999 University of Waikato, Hamilton, NZ (original
  *      code, ContingencyTables.java )
  *    Copyright (C) 2008 Fran Supek (adapted code)
  */
-
 package hr.irb.fastRandomForest;
-
 
 /**
  * Functions used for finding best splits in FastRfTree. Based on parts of
@@ -33,115 +31,88 @@ package hr.irb.fastRandomForest;
  */
 public class SplitCriteria {
 
+    private SplitCriteria() {}
+    
+    /**
+     * Similar to weka.core.ContingencyTables.entropyConditionedOnRows.
+     *
+     * Does not output entropy, output is modified to make routine faster: the
+     * result is not divided by "total", as the total is a constant in all
+     * operations (subtraction, comparison) performed as a part of splitting in
+     * FastRfTree. Also, we don't have to divide by Math.log(2) as the
+     * logarithms provided by fastLog2() are already base 2.
+     *
+     * @param matrix the contingency table
+     * @return the conditional entropy of the columns given the rows
+     */
+    public static double entropyConditionedOnRows(double[][] matrix) {
+        double returnValue = 0, sumForBranch;
+        //double total = 0;
+        for (int branchNum = 0; branchNum < matrix.length; branchNum++) {
+            sumForBranch = 0;
+            for (int classNum = 0; classNum < matrix[0].length; classNum++) {
+                returnValue = returnValue + lnFunc(matrix[branchNum][classNum]);
+                sumForBranch += matrix[branchNum][classNum];
+            }
+            returnValue = returnValue - lnFunc(sumForBranch);
+            // total += sumForRow;
+        }
+        //return -returnValue / (total * log2);
+        return -returnValue;
 
-  /**
-   * Similar to weka.core.ContingencyTables.entropyConditionedOnRows.
-   *
-   * Does not output entropy, output is modified to make routine faster:
-   * the result is not divided by "total", as the total is a constant
-   * in all operations (subtraction, comparison) performed as a part of
-   * splitting in FastRfTree. Also, we don't have to divide by Math.log(2)
-   * as the logarithms provided by fastLog2() are already base 2.
-   *
-   * @param matrix the contingency table
-   * @return the conditional entropy of the columns given the rows
-   */
-  public static double entropyConditionedOnRows(double[][] matrix) {
-
-    double returnValue = 0, sumForBranch;
-    //double total = 0;
-
-    for (int branchNum = 0; branchNum < matrix.length; branchNum++) {
-      sumForBranch = 0;
-      for (int classNum = 0; classNum < matrix[0].length; classNum++) {
-        returnValue = returnValue + lnFunc(matrix[branchNum][classNum]);
-        sumForBranch += matrix[branchNum][classNum];
-      }
-      returnValue = returnValue - lnFunc(sumForBranch);
-      // total += sumForRow;
     }
 
-    //return -returnValue / (total * log2);
-    return -returnValue;
+    /**
+     * Similar to weka.core.ContingencyTables.entropyOverColumns
+     *
+     * Does not output entropy, output is modified to make routine faster: the
+     * result is not divided by "total", as the total is a constant in all
+     * operations (subtraction, comparison) performed as a part of splitting in
+     * FastRfTree. Also, we don't have to divide by Math.log(2) as the
+     * logarithms provided by fastLog2() are already base 2.
+     *
+     * @param matrix the contingency table
+     * @return the columns' entropy
+     */
+    public static double entropyOverColumns(double[][] matrix) {
+        double returnValue = 0, sumForColumn, total = 0;
+        for (int j = 0; j < matrix[0].length; j++) {
+            sumForColumn = 0;
+            for (int i = 0; i < matrix.length; i++)
+                sumForColumn += matrix[i][j];
+            returnValue -= lnFunc(sumForColumn);
+            total += sumForColumn;
+        }
+        //return (returnValue + lnFunc(total)) / (total * log2);
+        return (returnValue + lnFunc(total));
 
-  }
-
-
-
-  /**
-   * Similar to weka.core.ContingencyTables.entropyOverColumns
-   *
-   * Does not output entropy, output is modified to make routine faster:
-   * the result is not divided by "total", as the total is a constant
-   * in all operations (subtraction, comparison) performed as a part of
-   * splitting in FastRfTree. Also, we don't have to divide by Math.log(2)
-   * as the logarithms provided by fastLog2() are already base 2.
-   *
-   * @param matrix the contingency table
-   * @return the columns' entropy
-   */
-  public static double entropyOverColumns(double[][] matrix) {
-
-    //return ContingencyTables.entropyOverColumns(matrix);
-
-    double returnValue = 0, sumForColumn, total = 0;
-
-    for (int j = 0; j < matrix[0].length; j++) {
-      sumForColumn = 0;
-      for (int i = 0; i < matrix.length; i++) {
-        sumForColumn += matrix[i][j];
-      }
-      returnValue -= lnFunc(sumForColumn);
-      total += sumForColumn;
     }
 
-    //return (returnValue + lnFunc(total)) / (total * log2);
-    return (returnValue + lnFunc(total));
+    /**
+     * A fast approximation of log base 2, in single precision. Approximately 4
+     * times faster than Java's Math.log() function.
+     * Inspired by C code by Laurent de Soras:
+     * http://www.flipcode.com/archives/Fast_log_Function.shtml
+     */
+    public static float fastLog2(float val) {
+        int bits = Float.floatToIntBits(val);
+        final int log_2 = ((bits >> 23) & 255) - 128;
+        bits &= ~(255 << 23);
+        bits += 127 << 23;
+        val = Float.intBitsToFloat(bits);
+        val = ((-1.0f / 3) * val + 2) * val - 2.0f / 3;
+        return (val + log_2);
 
-  }
-
-
-
-  /**
-   * A fast approximation of log base 2, in single precision. Approximately
-   * 4 times faster than Java's Math.log() function.
-   *
-   * Inspired by C code by Laurent de Soras:
-   * http://www.flipcode.com/archives/Fast_log_Function.shtml
-   */
-  public static float fastLog2( float val ) {
-
-    int bits = Float.floatToIntBits(val);
-
-    final int log_2 = ( (bits >> 23) & 255) - 128;
-    bits &= ~(255 << 23);
-    bits += 127 << 23;
-
-    val = Float.intBitsToFloat(bits);
-
-    val = ((-1.0f/3) * val + 2) * val - 2.0f/3;
-    return (val + log_2);
-
-  }
-
-
-
-  /**
-   * Help method for computing entropy.
-   */
-  private static double lnFunc(double num) {
-
-    if (num <= 1e-6) {
-      return 0;
-    } else {
-      return num * fastLog2( (float) num );
-      //return num * Math.log( num );
     }
 
-  }
-
-
-
-
+    /**
+     * Help method for computing entropy.
+     */
+    private static double lnFunc(double num) {
+        if (num <= 1e-6)
+            return 0;
+        else
+            return num * fastLog2((float) num); //return num * Math.log( num );
+    }
 
 }
